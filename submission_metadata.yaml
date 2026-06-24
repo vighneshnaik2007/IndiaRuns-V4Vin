@@ -1,0 +1,91 @@
+# Redrob Hackathon — Submission Metadata 
+
+# ============================================================================
+# Team identity
+# ============================================================================
+team_name: "V4Vin"
+
+primary_contact:
+  name: "Vighnesh Naik"
+  email: "vighneshnaik2219@gmail.com"
+  phone: "+91-7829728695"
+
+team_members:
+  - name: "Vighnesh Naik"
+    email: "vighneshnaik2219@gmail.com"
+    role: "Team Lead & ML Engineer"
+  - name: "Vaibhav Milind Jadhav"
+    email: "vaibhavjadhavyou@gmail.com"
+    role: "ML Engineer"
+  - name: "Vaishnavi Vinayak Kadwad"
+    email: "vaishnavikadwad1@gmail.com"
+    role: "Data Engineer"
+  - name: "Vinayak Amasi"
+    email: "vishalsurya.amasi@gmail.com"
+    role: "Frontend & Deployment"
+
+# ============================================================================
+# Code and reproducibility
+# ============================================================================
+github_repo: "https://github.com/vighneshnaik2007/IndiaRuns-V4Vin"
+
+sandbox_link: "https://huggingface.co/spaces/vighneshnaik2007/IndiaRuns-V4Vin"
+
+reproduce_command: "python ranker_v4.py --candidates ./candidates.jsonl --out ./submission.csv.  "
+
+# ============================================================================
+# Compute environment
+# ============================================================================
+compute:
+  platform: "Windows 11 Local Machine"
+  cpu_cores: 8
+  ram_gb: 16
+  python_version: "3.10.11"
+  os: "Windows 11"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: true
+  pre_computation_time_minutes: 150
+
+# ============================================================================
+# AI tools declaration
+# ============================================================================
+ai_tools_used:
+  - "Claude"
+  - "Gemini 3.1 Flash-Lite"
+
+ai_usage_summary: |
+  Used Claude and Gemini 3.1 Flash-Lite for architecture discussion, code review, and debugging.
+  No candidate data was fed to any LLM. All scoring logic, embeddings,
+  and ranking pipeline were written and executed locally.
+
+# ============================================================================
+# Approach summary
+# ============================================================================
+methodology_summary: |
+  Hybrid AI scoring system with four components:
+  1. Semantic similarity (55% weight): Used a two-stage process; FAISS 
+     screening with 'all-MiniLM-L6-v2' followed by MPNet deep precision 
+     re-ranking to convert job description and 1,00,000 candidate profiles 
+     into vector embeddings, measuring cosine similarity beyond keywords.
+  2. Behavioral signal scoring (25% weight): Leveraged 23 Redrob platform 
+     signals including login recency, recruiter response rate, profile 
+     completeness, saved by recruiters, and interview completion rate to 
+     assess candidate engagement.
+  3. Rule-based scoring (20% weight): Applied JD-specific rules — bonus 
+     for 5-9 years experience, preferred locations, and AI/ML relevance; 
+     penalty for consulting-only backgrounds (TCS, Infosys, Wipro, etc.).
+  4. Final Optimization & Compliance: Applied diversity-aware location 
+     adjustments and mandatory validator tie-breaking (Score DESC, ID ASC).
+  Embeddings are precomputed offline (~150 min) and saved as numpy arrays. 
+  Final ranking runs in under 2 minutes on CPU within 16GB RAM.
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true
