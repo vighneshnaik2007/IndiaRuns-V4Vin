@@ -12,6 +12,7 @@ AI-powered hybrid candidate ranking system for the India Runs Hackathon (Redrob 
 pip install sentence-transformers numpy pandas tqdm scikit-learn
 
 python ranker_v4.py    # Generates rankings and submission.csv
+
 python validate_submission.py submission.csv  # Validate your results
 
 ## Output
