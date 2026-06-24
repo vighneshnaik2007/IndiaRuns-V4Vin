@@ -18,6 +18,7 @@ import os
 import torch
 import hashlib
 import faiss  # FAISS Vector Database
+import argparse
 
 from skill_graph import skill_graph_score, get_skill_matches, JD_SKILLS
 from honeypot import filter_honeypots, get_honeypot_report
@@ -347,8 +348,18 @@ class RankSenseRanker:
         return df, removed, top_candidates, mini_embs[top_indices]
 
 if __name__ == "__main__":
+    # Set up command-line arguments for hackathon compatibility
+    parser = argparse.ArgumentParser(description="RankSense Ranking Engine")
+    parser.add_argument("--candidates", type=str, default="candidates.jsonl", help="Path to input JSONL file")
+    parser.add_argument("--out", type=str, default="submission.csv", help="Path to output CSV file")
+    
+    args = parser.parse_args()
+    
+    # Run the ranker
     ranker = RankSenseRanker()
     ranker.load_models()
-    df, honeypots, clean, emb = ranker.rank(filepath="candidates.jsonl", top_n=100, save_embeddings=True)
-    df.to_csv("submission.csv", index=False)
-    print(f"✅ submission.csv saved! {len(honeypots)} honeypots removed.")
+    df, honeypots, clean, emb = ranker.rank(filepath=args.candidates, top_n=100, save_embeddings=True)
+    
+    # Save the output
+    df.to_csv(args.out, index=False)
+    print(f"✅ {args.out} saved! {len(honeypots)} honeypots removed.")
