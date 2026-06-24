@@ -1,0 +1,11 @@
+*.jsonl
+*.npy
+*.csv
+*.zip
+*.json
+*.docx
+*.yaml
+__MACOSX/
+.DS_Store
+__pycache__/
+*.pyc
