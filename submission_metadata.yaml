@@ -31,7 +31,7 @@ github_repo: "https://github.com/vighneshnaik2007/IndiaRuns-V4Vin"
 
 sandbox_link: "https://huggingface.co/spaces/Vighneshnaik22/RankSense"
 
-reproduce_command: "python ranker_v4.py --candidates ./candidates.jsonl --out ./submission.csv.  "
+reproduce_command: "python ranker_v4.py --candidates ./candidates.jsonl --out ./submission.csv"
 
 # ============================================================================
 # Compute environment
@@ -44,8 +44,8 @@ compute:
   os: "Windows 11"
   uses_gpu_for_inference: false
   has_network_during_ranking: false
-  pre_computation_required: true
-  pre_computation_time_minutes: 150
+  pre_computation_required: false
+  pre_computation_time_minutes: 0
 
 # ============================================================================
 # AI tools declaration
