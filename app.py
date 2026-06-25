@@ -1003,11 +1003,17 @@ def preview_jd(jd_text):
 
 DARK_MODE_HEAD = """
 <script>
-    // Force dark mode on first visit before Gradio paints the UI
-    if (localStorage.getItem('theme') === null) {
-        localStorage.setItem('theme', 'dark');
-        document.documentElement.classList.add('dark');
+    // Enhanced script to force dark mode on load
+    function forceDarkMode() {
+        if (!document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+        }
     }
+    // Run immediately and again after a short delay
+    forceDarkMode();
+    setTimeout(forceDarkMode, 100);
+    setTimeout(forceDarkMode, 500);
 </script>
 """
 
@@ -1020,7 +1026,7 @@ with gr.Blocks(
     title="RankSense — AI Candidate Intelligence", 
     head=DARK_MODE_HEAD,
     css=CUSTOM_CSS,
-    theme=gr.themes.Base(primary_hue="indigo", neutral_hue="slate")
+    theme=gr.themes.Base(primary_hue="indigo", neutral_hue="slate").js(js=DARK_MODE_HEAD),
 ) as demo:
 
     gr.HTML("""
