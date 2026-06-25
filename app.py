@@ -1044,7 +1044,7 @@ DARK_MODE_HEAD = """
 # ============================================================
 
 # We pass the DARK_MODE_HEAD script directly into the HTML head so it runs first
-with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_HEAD) as demo:
+with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_HEAD, css=CUSTOM_CSS) as demo:
 
     gr.HTML("""
     <div class="rs-header">
@@ -1355,8 +1355,5 @@ with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_H
     )
 
 demo.launch(
-    server_name="0.0.0.0",   # required for HuggingFace Spaces
-    footer_links=["gradio", "settings"],
-    css=CUSTOM_CSS,
-    theme=gr.themes.Base(primary_hue="indigo", neutral_hue="slate")
+    server_name="0.0.0.0"
 )
