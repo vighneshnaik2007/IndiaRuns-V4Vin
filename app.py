@@ -297,6 +297,7 @@ input[type=range] { accent-color: var(--accent) !important; }
 /* ── WORKSPACE: side-by-side panels ──────────────────────── */
 .workspace-outer {
     display: flex !important;
+    flex-wrap: nowrap !important;
     gap: 12px !important;
     align-items: flex-start !important;
     width: 100% !important;
@@ -1167,7 +1168,7 @@ with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_H
                         stats_output = gr.HTML(stats_strip(0, 0, 0, 0))
 
                 # ── MAIN WORKSPACE: two columns side by side ──
-                with gr.Row():
+                with gr.Row(elem_classes=["workspace-outer"]):
                     # LEFT: Ranked Shortlist
                     with gr.Column(scale=1, min_width=0, elem_classes=["workspace-col-left"]):
                         
