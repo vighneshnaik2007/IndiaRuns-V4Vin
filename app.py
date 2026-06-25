@@ -1,5 +1,5 @@
 # ============================================================
-# app.py — RankSense: AI Candidate Intelligence Platform
+# app_v4.py — RankSense: AI Candidate Intelligence Platform
 # Three-column workspace · Glass-box controls · Tech-Enterprise UI
 # 100% local inference — no external API calls during ranking.
 # ============================================================
@@ -280,7 +280,6 @@ input[type=range] { accent-color: var(--accent) !important; }
 /* ── WORKSPACE: side-by-side panels ──────────────────────── */
 .workspace-outer {
     display: flex !important;
-    flex-wrap: nowrap !important; /* Prevents vertical stacking */
     gap: 12px !important;
     align-items: flex-start !important;
     width: 100% !important;
@@ -1003,11 +1002,50 @@ def preview_jd(jd_text):
 
 DARK_MODE_HEAD = """
 <script>
-    // Force dark mode on first visit before Gradio paints the UI
-    if (localStorage.getItem('theme') === null) {
-        localStorage.setItem('theme', 'dark');
-        document.documentElement.classList.add('dark');
+(function() {
+    // Step 1: Set immediately on <html> before any paint
+    document.documentElement.classList.add('dark');
+    localStorage.setItem('theme', 'dark');
+
+    // Step 2: Re-apply after Gradio mounts (it removes the class during init)
+    function forceDark() {
+        var html = document.documentElement;
+        if (!html.classList.contains('dark')) {
+            html.classList.add('dark');
+        }
+        // Also click Gradio's own dark mode button if it exists
+        var btn = document.querySelector('.dark-mode-btn, [data-testid="theme-toggle"], button[aria-label="Toggle Dark Mode"]');
+        if (btn) {
+            var isDark = html.classList.contains('dark');
+            var btnState = btn.getAttribute('aria-pressed') || btn.getAttribute('data-theme');
+            // Only click if it appears to be in light mode
+            if (btnState === 'false' || btnState === 'light') btn.click();
+        }
     }
+
+    // Step 3: MutationObserver — watch for Gradio removing .dark and immediately re-add it
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            if (m.attributeName === 'class') {
+                if (!document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.add('dark');
+                }
+            }
+        });
+    });
+    observer.observe(document.documentElement, { attributes: true });
+
+    // Step 4: Also run after DOM and after full page load as extra safety net
+    document.addEventListener('DOMContentLoaded', forceDark);
+    window.addEventListener('load', function() {
+        forceDark();
+        // Run a few more times with delays since Gradio does async rendering
+        setTimeout(forceDark, 100);
+        setTimeout(forceDark, 500);
+        setTimeout(forceDark, 1500);
+        setTimeout(forceDark, 3000);
+    });
+})();
 </script>
 """
 
@@ -1016,12 +1054,7 @@ DARK_MODE_HEAD = """
 # ============================================================
 
 # We pass the DARK_MODE_HEAD script directly into the HTML head so it runs first
-with gr.Blocks(
-    title="RankSense — AI Candidate Intelligence", 
-    head=DARK_MODE_HEAD,
-    css=CUSTOM_CSS,
-    theme=gr.themes.Base(primary_hue="indigo", neutral_hue="slate")
-) as demo:
+with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_HEAD, theme=gr.themes.Base(primary_hue="indigo", neutral_hue="slate"), css=CUSTOM_CSS) as demo:
 
     gr.HTML("""
     <div class="rs-header">
@@ -1119,7 +1152,7 @@ with gr.Blocks(
                         stats_output = gr.HTML(stats_strip(0, 0, 0, 0))
 
                 # ── MAIN WORKSPACE: two columns side by side ──
-                with gr.Row(elem_classes=["workspace-outer"]):
+                with gr.Row():
                     # LEFT: Ranked Shortlist
                     with gr.Column(scale=1, min_width=0, elem_classes=["workspace-col-left"]):
                         
@@ -1328,4 +1361,6 @@ with gr.Blocks(
         outputs=[lookalike_output]
     )
 
-demo.launch(server_name="0.0.0.0", server_port=7860)
+demo.launch(
+    footer_links=["gradio", "settings"],
+)
