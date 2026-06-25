@@ -22,6 +22,23 @@ from bias_audit import run_full_audit, apply_blind_mode
 from outreach import generate_batch_drafts, export_drafts_as_text, export_for_ats
 from outreach import record_rejection, record_acceptance, compute_weight_nudges, load_feedback
 
+# ── HuggingFace Demo Mode ─────────────────────────────────────
+HF_DEMO_MODE   = os.path.exists("sample_candidates.json")
+SAMPLE_FILE    = "sample_candidates.json"
+HF_DEMO_BANNER = """
+<div style="background:linear-gradient(135deg,#4F46E5,#0D9488);border-radius:12px;
+            padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
+    <span style="font-size:26px;">⚡</span>
+    <div>
+        <div style="font-weight:800;color:#fff;font-size:14px;">Live Demo — Pre-loaded with 50 sample candidates</div>
+        <div style="color:rgba(255,255,255,0.85);font-size:12px;margin-top:2px;">
+            Click <strong>🚀 Run Ranking</strong> immediately to see RankSense in action.
+            Upload your own .jsonl to rank a full dataset.
+        </div>
+    </div>
+</div>
+"""
+
 # ============================================================
 # THEME / CSS
 # ============================================================
@@ -721,6 +738,11 @@ def back_to_configuration():
 # ============================================================
 
 def run_ranking(file, jd_text, top_n, w_semantic, w_skill, w_signals, w_rules, w_career, w_domain, w_cred, blind_mode):
+    # HF Demo Mode: if no file uploaded, auto-use sample_candidates.json
+    if file is None and HF_DEMO_MODE:
+        class _FakeFile:
+            name = SAMPLE_FILE
+        file = _FakeFile()
     if file is None:
         return (
             gr.update(visible=True), gr.update(visible=False),
@@ -763,10 +785,13 @@ def run_ranking(file, jd_text, top_n, w_semantic, w_skill, w_signals, w_rules, w
             "semantic": w_semantic, "skill": w_skill, "signals": w_signals,
             "rules": w_rules, "career": w_career, "domain": w_domain, "credentials": w_cred
         }
-        nudge = compute_weight_nudges()
+        try:
+            nudge = compute_weight_nudges()
+        except Exception:
+            nudge = {}  # HF filesystem fallback
 
         df, honeypots, clean_candidates, embeddings = ranker.rank(
-            candidates=candidates, top_n=int(top_n), save_embeddings=True,
+            candidates=candidates, top_n=int(top_n), save_embeddings=False,  # HF filesystem is ephemeral
             weight_overrides=weight_overrides, feedback_nudge=nudge
         )
 
@@ -904,11 +929,15 @@ def reject_candidate(reason_tag, reason_note):
     if reason_note and reason_note.strip():
         reason = f"{reason}: {reason_note.strip()}" if reason else reason_note.strip()
     if STATE["selected_id"] and reason:
-        record_rejection(STATE["selected_id"], reason)
-        fb = load_feedback()
+        try:
+            record_rejection(STATE["selected_id"], reason)
+            fb = load_feedback()
+            count = len(fb["rejected"])
+        except Exception:
+            count = 1  # HF read-only filesystem — feedback not persisted
         return (
             f"<div style='font-size:12px;color:#DC2626;padding:8px;background:#FEF2F2;border-radius:8px;'>"
-            f"Noted: '{reason}' — feedback recorded ({len(fb['rejected'])} total). "
+            f"Noted: '{reason}' — feedback recorded ({count} total). "
             f"Future rankings will adjust.</div>"
         )
     return "<div style='font-size:12px;color:var(--text-secondary);padding:8px;'>Select a candidate and choose a reason before submitting.</div>"
@@ -1003,27 +1032,13 @@ def preview_jd(jd_text):
 DARK_MODE_HEAD = """
 <script>
 (function() {
-    // Step 1: Set immediately on <html> before any paint
     document.documentElement.classList.add('dark');
     localStorage.setItem('theme', 'dark');
-
-    // Step 2: Re-apply after Gradio mounts (it removes the class during init)
     function forceDark() {
-        var html = document.documentElement;
-        if (!html.classList.contains('dark')) {
-            html.classList.add('dark');
-        }
-        // Also click Gradio's own dark mode button if it exists
-        var btn = document.querySelector('.dark-mode-btn, [data-testid="theme-toggle"], button[aria-label="Toggle Dark Mode"]');
-        if (btn) {
-            var isDark = html.classList.contains('dark');
-            var btnState = btn.getAttribute('aria-pressed') || btn.getAttribute('data-theme');
-            // Only click if it appears to be in light mode
-            if (btnState === 'false' || btnState === 'light') btn.click();
+        if (!document.documentElement.classList.contains('dark')) {
+            document.documentElement.classList.add('dark');
         }
     }
-
-    // Step 3: MutationObserver — watch for Gradio removing .dark and immediately re-add it
     var observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(m) {
             if (m.attributeName === 'class') {
@@ -1034,12 +1049,9 @@ DARK_MODE_HEAD = """
         });
     });
     observer.observe(document.documentElement, { attributes: true });
-
-    // Step 4: Also run after DOM and after full page load as extra safety net
     document.addEventListener('DOMContentLoaded', forceDark);
     window.addEventListener('load', function() {
         forceDark();
-        // Run a few more times with delays since Gradio does async rendering
         setTimeout(forceDark, 100);
         setTimeout(forceDark, 500);
         setTimeout(forceDark, 1500);
@@ -1067,6 +1079,9 @@ with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_H
         <div style="font-size:11px;color:var(--text-muted);">100% local inference · No data leaves your machine</div>
     </div>
     """)
+
+    if HF_DEMO_MODE:
+        gr.HTML(HF_DEMO_BANNER)
 
     with gr.Tabs():
 
@@ -1361,6 +1376,4 @@ with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_H
         outputs=[lookalike_output]
     )
 
-demo.launch(
-    footer_links=["gradio", "settings"],
-)
+demo.launch(server_name="0.0.0.0")
