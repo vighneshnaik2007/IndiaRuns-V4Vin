@@ -77,7 +77,6 @@ methodology_summary: |
      penalty for consulting-only backgrounds (TCS, Infosys, Wipro, etc.).
   4. Final Optimization & Compliance: Applied diversity-aware location 
      adjustments and mandatory validator tie-breaking (Score DESC, ID ASC).
-  Embeddings are precomputed offline (~150 min) and saved as numpy arrays. 
   Final ranking runs in under 2 minutes on CPU within 16GB RAM.
 
 # ============================================================================
