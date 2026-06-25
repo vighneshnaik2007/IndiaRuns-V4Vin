@@ -1,5 +1,5 @@
 # ============================================================
-# app_v4.py — RankSense: AI Candidate Intelligence Platform
+# app.py — RankSense: AI Candidate Intelligence Platform
 # Three-column workspace · Glass-box controls · Tech-Enterprise UI
 # 100% local inference — no external API calls during ranking.
 # ============================================================
@@ -21,23 +21,6 @@ from lookalike import build_lookalike_text, find_lookalikes, lookalike_explanati
 from bias_audit import run_full_audit, apply_blind_mode
 from outreach import generate_batch_drafts, export_drafts_as_text, export_for_ats
 from outreach import record_rejection, record_acceptance, compute_weight_nudges, load_feedback
-
-# ── HuggingFace Demo Mode ─────────────────────────────────────
-HF_DEMO_MODE   = os.path.exists("sample_candidates.json")
-SAMPLE_FILE    = "sample_candidates.json"
-HF_DEMO_BANNER = """
-<div style="background:linear-gradient(135deg,#4F46E5,#0D9488);border-radius:12px;
-            padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:14px;">
-    <span style="font-size:26px;">⚡</span>
-    <div>
-        <div style="font-weight:800;color:#fff;font-size:14px;">Live Demo — Pre-loaded with 50 sample candidates</div>
-        <div style="color:rgba(255,255,255,0.85);font-size:12px;margin-top:2px;">
-            Click <strong>🚀 Run Ranking</strong> immediately to see RankSense in action.
-            Upload your own .jsonl to rank a full dataset.
-        </div>
-    </div>
-</div>
-"""
 
 # ============================================================
 # THEME / CSS
@@ -297,6 +280,7 @@ input[type=range] { accent-color: var(--accent) !important; }
 /* ── WORKSPACE: side-by-side panels ──────────────────────── */
 .workspace-outer {
     display: flex !important;
+    flex-wrap: nowrap !important; /* Prevents vertical stacking */
     gap: 12px !important;
     align-items: flex-start !important;
     width: 100% !important;
@@ -738,11 +722,6 @@ def back_to_configuration():
 # ============================================================
 
 def run_ranking(file, jd_text, top_n, w_semantic, w_skill, w_signals, w_rules, w_career, w_domain, w_cred, blind_mode):
-    # HF Demo Mode: if no file uploaded, auto-use sample_candidates.json
-    if file is None and HF_DEMO_MODE:
-        class _FakeFile:
-            name = SAMPLE_FILE
-        file = _FakeFile()
     if file is None:
         return (
             gr.update(visible=True), gr.update(visible=False),
@@ -785,13 +764,10 @@ def run_ranking(file, jd_text, top_n, w_semantic, w_skill, w_signals, w_rules, w
             "semantic": w_semantic, "skill": w_skill, "signals": w_signals,
             "rules": w_rules, "career": w_career, "domain": w_domain, "credentials": w_cred
         }
-        try:
-            nudge = compute_weight_nudges()
-        except Exception:
-            nudge = {}  # HF filesystem fallback
+        nudge = compute_weight_nudges()
 
         df, honeypots, clean_candidates, embeddings = ranker.rank(
-            candidates=candidates, top_n=int(top_n), save_embeddings=False,  # HF filesystem is ephemeral
+            candidates=candidates, top_n=int(top_n), save_embeddings=True,
             weight_overrides=weight_overrides, feedback_nudge=nudge
         )
 
@@ -929,15 +905,11 @@ def reject_candidate(reason_tag, reason_note):
     if reason_note and reason_note.strip():
         reason = f"{reason}: {reason_note.strip()}" if reason else reason_note.strip()
     if STATE["selected_id"] and reason:
-        try:
-            record_rejection(STATE["selected_id"], reason)
-            fb = load_feedback()
-            count = len(fb["rejected"])
-        except Exception:
-            count = 1  # HF read-only filesystem — feedback not persisted
+        record_rejection(STATE["selected_id"], reason)
+        fb = load_feedback()
         return (
             f"<div style='font-size:12px;color:#DC2626;padding:8px;background:#FEF2F2;border-radius:8px;'>"
-            f"Noted: '{reason}' — feedback recorded ({count} total). "
+            f"Noted: '{reason}' — feedback recorded ({len(fb['rejected'])} total). "
             f"Future rankings will adjust.</div>"
         )
     return "<div style='font-size:12px;color:var(--text-secondary);padding:8px;'>Select a candidate and choose a reason before submitting.</div>"
@@ -1044,7 +1016,12 @@ DARK_MODE_HEAD = """
 # ============================================================
 
 # We pass the DARK_MODE_HEAD script directly into the HTML head so it runs first
-with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_HEAD, css=CUSTOM_CSS) as demo:
+with gr.Blocks(
+    title="RankSense — AI Candidate Intelligence", 
+    head=DARK_MODE_HEAD,
+    css=CUSTOM_CSS,
+    theme=gr.themes.Base(primary_hue="indigo", neutral_hue="slate")
+) as demo:
 
     gr.HTML("""
     <div class="rs-header">
@@ -1057,9 +1034,6 @@ with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_H
         <div style="font-size:11px;color:var(--text-muted);">100% local inference · No data leaves your machine</div>
     </div>
     """)
-
-    if HF_DEMO_MODE:
-        gr.HTML(HF_DEMO_BANNER)
 
     with gr.Tabs():
 
@@ -1145,7 +1119,7 @@ with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_H
                         stats_output = gr.HTML(stats_strip(0, 0, 0, 0))
 
                 # ── MAIN WORKSPACE: two columns side by side ──
-                with gr.Row():
+                with gr.Row(elem_classes=["workspace-outer"]):
                     # LEFT: Ranked Shortlist
                     with gr.Column(scale=1, min_width=0, elem_classes=["workspace-col-left"]):
                         
