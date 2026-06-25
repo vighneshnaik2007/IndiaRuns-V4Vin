@@ -29,7 +29,7 @@ team_members:
 # ============================================================================
 github_repo: "https://github.com/vighneshnaik2007/IndiaRuns-V4Vin"
 
-sandbox_link: "https://huggingface.co/spaces/vighneshnaik2007/IndiaRuns-V4Vin"
+sandbox_link: "https://huggingface.co/spaces/Vighneshnaik22/RankSense"
 
 reproduce_command: "python ranker_v4.py --candidates ./candidates.jsonl --out ./submission.csv.  "
 
