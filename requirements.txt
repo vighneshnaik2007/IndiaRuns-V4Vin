@@ -3,4 +3,3 @@ numpy
 pandas
 scikit-learn
 faiss-cpu
-huggingface-hub<1.0

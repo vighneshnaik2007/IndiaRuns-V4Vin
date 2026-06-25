@@ -1354,6 +1354,4 @@ with gr.Blocks(title="RankSense — AI Candidate Intelligence", head=DARK_MODE_H
         outputs=[lookalike_output]
     )
 
-demo.launch(
-    server_name="0.0.0.0"
-)
+demo.launch(server_name="0.0.0.0", server_port=7860)
