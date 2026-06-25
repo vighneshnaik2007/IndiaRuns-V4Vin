@@ -3,6 +3,8 @@ numpy
 pandas
 scikit-learn
 faiss-cpu
+tqdm
 huggingface-hub<1.0
 fastapi==0.112.2
 pydantic==2.8.2
+gradio==4.44.1
